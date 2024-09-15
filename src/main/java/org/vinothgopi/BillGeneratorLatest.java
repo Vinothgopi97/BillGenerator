@@ -39,6 +39,30 @@ import java.util.Map;
 
 public class BillGeneratorLatest {
 
+    static String address = "Mr. Vinothgopi G\n" +
+            "4/1351-A, Hussain Colony 626189\n" +
+            "Virudhunagar, Tamilnadu, India\n\n\n\n\n";
+
+    static String placeOfSupply = "Place of Supply: 33 Tamil Nadu\n" +
+            "GST Registration Number: Not Available";
+
+    static String jioNumber = "914562359020";
+    static String accountNo = "410629241806";
+    static String statementNo = "462505632985";
+    static String billingDate = "12-Aug-2024";
+    static String dueDate = "20-Aug-2024";
+    static String gstBillNo = "S33I242507865046";
+    static String registerdMobile = "+918760603355";
+    static String email = "vinothgopi@hotmail.com";
+
+    static String totalAmount = "4718.82";
+    static double gstPercentage = 18.0;
+    static double totalAmt = Double.parseDouble(totalAmount);
+    static double gstAmt =  (totalAmt * gstPercentage) / ( 100 + gstPercentage);
+    static double cgstAmt = gstAmt/2;
+    static double sgstAmt = cgstAmt;
+    static double currentTaxable = totalAmt - gstAmt;
+
     public static void addOvals(PdfDocument pdf, int x, int y, String[] textAbove, String belowText) throws IOException {
 //        pdf.addNewPage();
         PdfCanvas canvas = new PdfCanvas(pdf.getFirstPage());
@@ -360,29 +384,15 @@ public class BillGeneratorLatest {
             // Load the image
             addJioDigitalLifeImage(doc, pdfDoc);
 
-
-            String address = "Mr. Vinothgopi G\n" +
-                    "4/1351-A, Hussain Colony 626189\n" +
-                    "Virudhunagar, Tamilnadu, India\n\n\n\n\n";
-
-            String placeOfSupply = "Place of Supply: 33 Tamil Nadu\n" +
-                    "GST Registration Number: Not Available";
             Paragraph placePara = new Paragraph(placeOfSupply).setFixedLeading(10);
             placePara.setFontSize(8);
 
-            String jioNumber = "914562359020";
-            String accountNo = "410629241806";
-            String statementNo = "462505632985";
-            String billingDate = "12-Aug-2024";
-            String dueDate = "20-Aug-2024";
-            String gstBillNo = "S33I242507865046";
-
             addOvals(pdfDoc, 30,560, new String[]{"My Previous", "Balance (₹)"}, "0.00");
             addOvals(pdfDoc, 120,560, new String[]{"Payment", "Received (₹)"}, "0.00");
-            addOvals(pdfDoc, 205,560, new String[]{"Current Taxable", "Charges (₹)"}, "0.00");
-            addOvals(pdfDoc, 290,560, new String[]{"Taxes (₹)"}, "0.00");
-            addOvals(pdfDoc, 375,560, new String[]{" Total Current ", "Month Charges (₹)"}, "0.00");
-            addOvals(pdfDoc, 460,560, new String[]{" Total Payable ", "(₹)"}, "0.00");
+            addOvals(pdfDoc, 205,560, new String[]{"Current Taxable", "Charges (₹)"}, String.valueOf(currentTaxable));
+            addOvals(pdfDoc, 290,560, new String[]{"Taxes (₹)"}, String.format("%.2f", gstAmt) );
+            addOvals(pdfDoc, 375,560, new String[]{" Total Current ", "Month Charges (₹)"}, totalAmount);
+            addOvals(pdfDoc, 460,560, new String[]{" Total Payable ", "(₹)"}, totalAmount);
             Paragraph paragraph = new Paragraph(address);
             paragraph.setWidth(150);
             paragraph.setFixedLeading(12);
@@ -431,12 +441,7 @@ public class BillGeneratorLatest {
             detailsTable.addCell(new Cell().add(new Paragraph("₹0").setFixedLeading(5)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
 
 
-            String totalAmount = "4718.82";
-            double gstPercentage = 18.0;
-            double totalAmt = Double.parseDouble(totalAmount);
-            double gstAmt =  (totalAmt * gstPercentage) / ( 100 + gstPercentage);
-            double cgstAmt = gstAmt/2;
-            double sgstAmt = cgstAmt;
+
 
             String totalGst = Double.toString(gstAmt);
             String centralGst = Double.toString(cgstAmt);
@@ -489,7 +494,7 @@ public class BillGeneratorLatest {
 
             doc.add(table);
 
-            Paragraph aadhaar = new Paragraph("Registered Mobile : +918760603355 | Aadhaar Number : XXXX XXXX1978 | E-Mail: vinothgopi@hotmail.com");
+            Paragraph aadhaar = new Paragraph("Registered Mobile : "+registerdMobile+" | Aadhaar Number : XXXX XXXX1978 | E-Mail: "+email);
             aadhaar.setFontSize(8);
             aadhaar.setFixedLeading(5);
             doc.add(aadhaar);
@@ -631,13 +636,13 @@ public class BillGeneratorLatest {
 
             addBillTable(doc, pdfDoc);
 
-            Table payByTable = new Table(1);
-            payByTable.setMarginTop(12);
-            payByTable.setMarginLeft(190);
-            payByTable.addCell(new Cell().add(new Paragraph("Pay By 20-SEP-2024\n" +
-                    "₹706.82").setTextAlignment(TextAlignment.CENTER).setBold().setMarginLeft(30).setMarginRight(30).setFontSize(9)));
+//            Table payByTable = new Table(1);
+//            payByTable.setMarginTop(12);
+//            payByTable.setMarginLeft(190);
+//            payByTable.addCell(new Cell().add(new Paragraph("Pay By 20-SEP-2024\n" +
+//                    "₹706.82").setTextAlignment(TextAlignment.CENTER).setBold().setMarginLeft(30).setMarginRight(30).setFontSize(9)));
 
-            doc.add(payByTable);
+//            doc.add(payByTable);
 
             String imagePath1 = "src/main/resources/images/payment1.png"; // Path to your image
             Image img1 = new Image(ImageDataFactory.create(imagePath1));
