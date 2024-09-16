@@ -7,6 +7,7 @@ import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.itextpdf.barcodes.BarcodeQRCode;
+import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.image.ImageData;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.colors.ColorConstants;
@@ -32,6 +33,7 @@ import com.itextpdf.layout.property.VerticalAlignment;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,6 +65,12 @@ public class BillGeneratorLatest {
     static double sgstAmt = cgstAmt;
     static double currentTaxable = totalAmt - gstAmt;
 
+    static String totalGst = String.format("%.2f", gstAmt);
+    static String centralGst = String.format("%.2f", cgstAmt);
+    static String stateGst =  String.format("%.2f", sgstAmt);
+
+    static String rupeeSymbol = "\u20B9";
+
     public static void addOvals(PdfDocument pdf, int x, int y, String[] textAbove, String belowText) throws IOException {
 //        pdf.addNewPage();
         PdfCanvas canvas = new PdfCanvas(pdf.getFirstPage());
@@ -85,14 +93,14 @@ public class BillGeneratorLatest {
         canvas.stroke();
 
         // Create a font for text
-        PdfFont font = PdfFontFactory.createFont();
+        PdfFont font =getFont();
 
         // Set text color and font size
         canvas.setFontAndSize(font, 8);
         canvas.setFillColor(ColorConstants.BLACK);
 
 //        String textAbove = "My Previous \n" +
-//                "Balance (₹)";
+//                "Balance ("+rupeeSymbol+")";
 //        float textAboveWidth = font.getWidth(aboveText, 6);
 //        float textAboveX = ovalBounds.getLeft() + (ovalBounds.getWidth() - textAboveWidth) / 2;
 //        float textAboveY = centerY + 5; // Adjust distance above the line
@@ -102,7 +110,7 @@ public class BillGeneratorLatest {
 //        canvas.moveText(textAboveX, textAboveY);
 //        canvas.showText(aboveText);
 //        canvas.endText();
-//        String[] textAbove = {"Payment", "Received (₹)"};
+//        String[] textAbove = {"Payment", "Received ("+rupeeSymbol+")"};
         float lineHeight = 8; // Space between lines
 
         for (int i = 0; i < textAbove.length; i++) {
@@ -141,7 +149,7 @@ public class BillGeneratorLatest {
     private static void addBillTable(Document doc, PdfDocument pdfDoc) throws MalformedURLException {
         Table table = new Table(5);
         table.useAllAvailableWidth();
-        table.setMarginTop(75);
+        table.setMarginTop(85);
         table.setBorder(Border.NO_BORDER);
 
         // Add a border to the table only
@@ -150,13 +158,13 @@ public class BillGeneratorLatest {
         table.addCell(getEmptyCell());
         table.addCell(getEmptyCell());
         table.addCell(getEmptyCell());
-        table.addCell(new Cell().setBorder(Border.NO_BORDER).add(new Paragraph("Amount (₹)").setFixedLeading(5)).setPaddingLeft(10));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER).add(new Paragraph("Amount ("+rupeeSymbol+")").setFixedLeading(5)).setPaddingLeft(10));
 
         table.addCell(getCell("1"));
         table.addCell(getCell("Monthly Plan Charges"));
         table.addCell(getEmptyCell());
         table.addCell(getEmptyCell());
-        table.addCell(new Cell().setBorder(Border.NO_BORDER).add(new Paragraph("494.00").setFixedLeading(5)).setPaddingLeft(10));
+        table.addCell(new Cell().setBorder(Border.NO_BORDER).add(new Paragraph(String.valueOf(currentTaxable)).setFixedLeading(5)).setPaddingLeft(10));
 
         table.addCell(getCell("2"));
         table.addCell(getCell("Usage Charges"));
@@ -256,7 +264,7 @@ public class BillGeneratorLatest {
         table.addCell(new Cell().add(new Paragraph("Total value of charges (1+2+3+4)").setBold().setFixedLeading(5)).setPaddingLeft(10).setBorder(Border.NO_BORDER));
         table.addCell(getEmptyCell());
         table.addCell(getEmptyCell());
-        table.addCell(new Cell().add(new Paragraph("0.00").setBold().setFixedLeading(5).setUnderline()).setPaddingLeft(10).setBorder(Border.NO_BORDER));
+        table.addCell(new Cell().add(new Paragraph(String.valueOf(currentTaxable)).setBold().setFixedLeading(5).setUnderline()).setPaddingLeft(10).setBorder(Border.NO_BORDER));
 
         table.addCell(getCell("6"));
         table.addCell(getCell("Current Month Discount/ Credit/ Debit"));
@@ -280,7 +288,7 @@ public class BillGeneratorLatest {
         table.addCell(new Cell().add(new Paragraph("Charges (5+6)").setFixedLeading(5).setBold()).setPaddingLeft(10).setBorder(Border.NO_BORDER));
         table.addCell(getEmptyCell());
         table.addCell(getEmptyCell());
-        table.addCell(new Cell().add(new Paragraph("0.00").setFixedLeading(5).setBold().setUnderline()).setPaddingLeft(10).setBorder(Border.NO_BORDER));
+        table.addCell(new Cell().add(new Paragraph(String.valueOf(currentTaxable)).setFixedLeading(5).setBold().setUnderline()).setPaddingLeft(10).setBorder(Border.NO_BORDER));
 
         table.addCell(getCell("8"));
         table.addCell(getCell("Taxes"));
@@ -291,14 +299,14 @@ public class BillGeneratorLatest {
         table.addCell(getEmptyCell());
         table.addCell(getCell("CGST (9%)"));
         table.addCell(getEmptyCell());
-        table.addCell(getCell("44.46"));
+        table.addCell(getCell(centralGst));
         table.addCell(getEmptyCell());
 
         table.addCell(getEmptyCell());
         table.addCell(getCell("SGST (9%)"));
         table.addCell(getEmptyCell());
-        table.addCell(new Cell().add(new Paragraph("44.46").setFixedLeading(5).setUnderline()).setPaddingLeft(10).setBorder(Border.NO_BORDER));
-        table.addCell(new Cell().add(new Paragraph("88.92").setFixedLeading(5).setUnderline()).setPaddingLeft(10).setBorder(Border.NO_BORDER));
+        table.addCell(new Cell().add(new Paragraph(stateGst).setFixedLeading(5).setUnderline()).setPaddingLeft(10).setBorder(Border.NO_BORDER));
+        table.addCell(new Cell().add(new Paragraph(totalGst).setFixedLeading(5).setUnderline()).setPaddingLeft(10).setBorder(Border.NO_BORDER));
 
         table.addCell(getCell("9"));
         table.addCell(getCell("Bill Discount Including Tax"));
@@ -329,10 +337,22 @@ public class BillGeneratorLatest {
         table.addCell(new Cell().add(new Paragraph("Current Month Charges (7+8+9+10+11+12)").setFixedLeading(5).setBold().setUnderline()).setPaddingLeft(10).setBorder(Border.NO_BORDER));
         table.addCell(getEmptyCell());
         table.addCell(getEmptyCell());
-        table.addCell(new Cell().add(new Paragraph("582.92").setBold().setFixedLeading(5).setUnderline().setMarginBottom(5)).setPaddingLeft(10).setBorder(Border.NO_BORDER));
+        table.addCell(new Cell().add(new Paragraph(String.valueOf(totalAmt)).setBold().setFixedLeading(5).setUnderline().setMarginBottom(5)).setPaddingLeft(10).setBorder(Border.NO_BORDER));
 //        table.addCell(getCell("582.92"));
         doc.add(table);
 
+    }
+
+    private static PdfFont getFont() throws IOException {
+        InputStream fontStream = BillGeneratorLatest.class.getResourceAsStream("/fonts/NotoSans-Regular.ttf");
+
+        if (fontStream == null) {
+            throw new RuntimeException("Font not found in resources folder!");
+        }
+
+        // Create font using the font stream
+        PdfFont font = PdfFontFactory.createFont(fontStream.readAllBytes(), PdfEncodings.IDENTITY_H, true);
+        return font;
     }
 
     private static void addJioDigitalLifeImage(Document doc, PdfDocument pdfDoc) throws MalformedURLException {
@@ -375,9 +395,16 @@ public class BillGeneratorLatest {
         try (PdfWriter writer = new PdfWriter(dest);
              PdfDocument pdfDoc = new PdfDocument(writer);
              Document doc = new Document(pdfDoc)) {
-            // Load a font that supports the ₹ symbol
-            String fontPath = "src/main/resources/fonts/NotoSans-Regular.ttf"; // Replace with your font path
-            PdfFont font = PdfFontFactory.createFont(fontPath, PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+            // Load a font that supports the "+rupeeSymbol+" symbol
+
+//            String fontPath = "src/main/resources/fonts/NotoSans-Regular.ttf"; // Replace with your font path
+            String fontPath = "src/main/resources/fonts/DejaVuSans.ttf"; // Replace with your font path
+//            PdfFont font = PdfFontFactory.createFont(fontPath, PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+//            PdfFont font = PdfFontFactory.createFont(fontPath, PdfEncodings.IDENTITY_H, true);
+            PdfFont font = getFont();
+
+
+
             doc.setFont(font);
             doc.setFontSize(7);
 
@@ -387,12 +414,12 @@ public class BillGeneratorLatest {
             Paragraph placePara = new Paragraph(placeOfSupply).setFixedLeading(10);
             placePara.setFontSize(8);
 
-            addOvals(pdfDoc, 30,560, new String[]{"My Previous", "Balance (₹)"}, "0.00");
-            addOvals(pdfDoc, 120,560, new String[]{"Payment", "Received (₹)"}, "0.00");
-            addOvals(pdfDoc, 205,560, new String[]{"Current Taxable", "Charges (₹)"}, String.valueOf(currentTaxable));
-            addOvals(pdfDoc, 290,560, new String[]{"Taxes (₹)"}, String.format("%.2f", gstAmt) );
-            addOvals(pdfDoc, 375,560, new String[]{" Total Current ", "Month Charges (₹)"}, totalAmount);
-            addOvals(pdfDoc, 460,560, new String[]{" Total Payable ", "(₹)"}, totalAmount);
+            addOvals(pdfDoc, 30,560, new String[]{"My Previous", "Balance ("+rupeeSymbol+")"}, "0.00");
+            addOvals(pdfDoc, 120,560, new String[]{"Payment", "Received ("+rupeeSymbol+")"}, "0.00");
+            addOvals(pdfDoc, 205,560, new String[]{"Current Taxable", "Charges ("+rupeeSymbol+")"}, String.valueOf(currentTaxable));
+            addOvals(pdfDoc, 290,560, new String[]{"Taxes ("+rupeeSymbol+")"}, String.format("%.2f", gstAmt) );
+            addOvals(pdfDoc, 375,560, new String[]{" Total Current ", "Month Charges ("+rupeeSymbol+")"}, totalAmount);
+            addOvals(pdfDoc, 460,560, new String[]{" Total Payable ", "("+rupeeSymbol+")"}, totalAmount);
             Paragraph paragraph = new Paragraph(address);
             paragraph.setWidth(150);
             paragraph.setFixedLeading(12);
@@ -406,8 +433,8 @@ public class BillGeneratorLatest {
                     " Document Number       : "+statementNo+"\n" +
                     " Billing cycle Date    : "+billingDate+"\n" +
                     " Due Date              : "+dueDate+"\n" +
-                    " Credit Limit          : ₹0\n" +
-                    " Security Deposit      : ₹0\n" ;
+                    " Credit Limit          : "+rupeeSymbol+"0\n" +
+                    " Security Deposit      : "+rupeeSymbol+"0\n" ;
 
             Table detailsTable = new Table(3);
             detailsTable.setMarginLeft(50);
@@ -434,18 +461,16 @@ public class BillGeneratorLatest {
 
             detailsTable.addCell(new Cell().add(new Paragraph("Credit Limit").setFixedLeading(5)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
             detailsTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(5)).setBorder(Border.NO_BORDER));
-            detailsTable.addCell(new Cell().add(new Paragraph("₹0").setFixedLeading(5)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
+            detailsTable.addCell(new Cell().add(new Paragraph(""+rupeeSymbol+"0").setFixedLeading(5)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
 
             detailsTable.addCell(new Cell().add(new Paragraph("Security Deposit").setFixedLeading(5)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
             detailsTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(5)).setBorder(Border.NO_BORDER));
-            detailsTable.addCell(new Cell().add(new Paragraph("₹0").setFixedLeading(5)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
+            detailsTable.addCell(new Cell().add(new Paragraph(""+rupeeSymbol+"0").setFixedLeading(5)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
 
 
 
 
-            String totalGst = Double.toString(gstAmt);
-            String centralGst = Double.toString(cgstAmt);
-            String stateGst = Double.toString(sgstAmt);
+
 
             Paragraph originForReceipt = new Paragraph("Original for Recipient").setTextAlignment(TextAlignment.CENTER).setFixedLeading(8);
             originForReceipt.setFontSize(8); // Set font size
@@ -516,7 +541,7 @@ public class BillGeneratorLatest {
             cell11.setBorder(Border.NO_BORDER);
             Paragraph statementDate = new Paragraph("Your Jio Fiber Bill From 11-AUG-2024 to 10-SEP-2024").setFixedLeading(6);
             statementDate.setWidth(250);
-            statementDate.setFontSize(10);
+            statementDate.setFontSize(9);
             statementDate.setBold();
             cell11.add(statementDate);
             cell11.setWidth(UnitValue.createPercentValue(70));
@@ -527,7 +552,7 @@ public class BillGeneratorLatest {
             cell12.setVerticalAlignment(VerticalAlignment.BOTTOM);
             Paragraph jioFiber = new Paragraph("Refer following pages for details of charges");
             jioFiber.setFontSize(5);
-            jioFiber.setMarginLeft(50);
+            jioFiber.setMarginLeft(40);
             jioFiber.setVerticalAlignment(VerticalAlignment.BOTTOM);
             cell12.add(jioFiber);
             table2.addCell(cell12);
@@ -540,109 +565,7 @@ public class BillGeneratorLatest {
             lineSeparator.setMarginBottom(10);
             doc.add(lineSeparator);
 
-            Table billTable = new Table(3);
-            billTable.setMarginTop(30);
-
-            Cell billCell1 = new Cell();
-            Paragraph paragraph1 = new Paragraph("Particulars").setMarginLeft(10);
-            paragraph1.setFontSize(9);
-            billCell1.setBorder(Border.NO_BORDER);
-            paragraph1.setBold();
-            billCell1.add(paragraph1);
-
-            billTable.addCell(billCell1);
-
-            Cell invoiceCell = new Cell();
-            invoiceCell.setBorder(Border.NO_BORDER);
-            Paragraph invoiceNumber = new Paragraph("Invoice Number");
-            invoiceNumber.setFontSize(9);
-            invoiceNumber.setMarginLeft(100);
-            invoiceNumber.setBold();
-            invoiceCell.add(invoiceNumber);
-
-            billTable.addCell(invoiceCell);
-
-            Cell amountCell = new Cell();
-            amountCell.setBorder(Border.NO_BORDER);
-            Paragraph amountPara = new Paragraph("Amount (₹)");
-            amountPara.setFontSize(9);
-            amountPara.setFont(font);
-            amountPara.setMarginLeft(150);
-            amountPara.setBold();
-            amountCell.add(amountPara);
-
-            billTable.addCell(amountCell.setBold());
-
-            billTable.addCell(new Cell().add(new Paragraph("(i) Connectivity Services").setFixedLeading(6).setMarginLeft(10).setBold().setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setBorder(Border.NO_BORDER));
-
-            billTable.setBorder(Border.NO_BORDER);
-
-            // Add a border to the table only
-            billTable.setBorder(new SolidBorder(new DeviceRgb(0, 0, 0), 1));
-
-            billTable.addCell(new Cell().add(new Paragraph("Previous Balance Due").setMarginLeft(10).setFixedLeading(5).setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setMarginLeft(200).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph("582.92").setFixedLeading(5).setMarginLeft(170).setFontSize(8)).setBorder(Border.NO_BORDER));
-
-            int leading = 15;
-            billTable.addCell(new Cell().add(new Paragraph("Payment Received").setMarginLeft(10).setFixedLeading(leading).setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setMarginLeft(200).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph("582.92").setFixedLeading(leading).setMarginLeft(170).setFontSize(8)).setBorder(Border.NO_BORDER));
-
-            billTable.addCell(new Cell().add(new Paragraph("Current Month Payable").setMarginLeft(10).setFixedLeading(5).setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph("444503240343").setFixedLeading(5).setMarginLeft(110).setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph("582.92").setFixedLeading(5).setMarginLeft(170).setFontSize(8)).setBorder(Border.NO_BORDER));
-
-            int leading2 = 15;
-            billTable.addCell(new Cell().add(new Paragraph("Total (i)").setMarginLeft(10).setFixedLeading(leading2).setBold().setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setMarginLeft(200).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph("582.92").setFixedLeading(leading2).setBold().setMarginLeft(170).setFontSize(8)).setBorder(Border.NO_BORDER));
-
-            billTable.addCell(new Cell().add(new Paragraph("(ii) Platform Services").setMarginLeft(10).setFixedLeading(5).setBold().setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setBorder(Border.NO_BORDER));
-
-            billTable.addCell(new Cell().add(new Paragraph("Previous Balance Due").setMarginLeft(10).setFixedLeading(leading2).setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setMarginLeft(200).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph("582.92").setMarginLeft(170).setFontSize(8).setFixedLeading(leading2)).setBorder(Border.NO_BORDER));
-
-            billTable.addCell(new Cell().add(new Paragraph("Payment Received").setMarginLeft(10).setFixedLeading(5).setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setMarginLeft(200).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph("582.92").setFixedLeading(5).setMarginLeft(170).setFontSize(8)).setBorder(Border.NO_BORDER));
-
-            billTable.addCell(new Cell().add(new Paragraph("Current Month Payable").setMarginLeft(10).setFixedLeading(leading2).setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph("444503240343").setFixedLeading(5).setMarginLeft(110).setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph("582.92").setFixedLeading(leading2).setMarginLeft(170).setFontSize(8)).setBorder(Border.NO_BORDER));
-
-            billTable.addCell(new Cell().add(new Paragraph("Total (ii)").setMarginLeft(10).setFixedLeading(5).setBold().setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setMarginLeft(200).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph("582.92").setFixedLeading(5).setBold().setMarginLeft(170).setFontSize(8)).setBorder(Border.NO_BORDER));
-
-            billTable.addCell(new Cell().add(new Paragraph("Total current charges (i + ii)").setMarginLeft(10).setFixedLeading(leading2).setBold().setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setMarginLeft(200).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph(totalAmount).setFixedLeading(leading2).setBold().setMarginLeft(170).setFontSize(8)).setBorder(Border.NO_BORDER));
-
-            billTable.addCell(new Cell().add(new Paragraph("(iii) Previous Balance with RRL").setMarginLeft(10).setFixedLeading(leading2).setFontSize(8).setWidth(120)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setMarginLeft(200).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph("0").setFixedLeading(leading2).setBold().setMarginLeft(170).setFontSize(8)).setBorder(Border.NO_BORDER));
-
-            billTable.addCell(new Cell().add(new Paragraph("Total Amount Payable (i + ii + iii)").setMarginLeft(10).setFixedLeading(leading2).setBold().setFontSize(8)).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().setMarginLeft(200).setBorder(Border.NO_BORDER));
-            billTable.addCell(new Cell().add(new Paragraph(totalAmount).setFixedLeading(leading2).setBold().setMarginLeft(170).setFontSize(8)).setBorder(Border.NO_BORDER));
-
-//            doc.add(billTable);
-
             addBillTable(doc, pdfDoc);
-
-//            Table payByTable = new Table(1);
-//            payByTable.setMarginTop(12);
-//            payByTable.setMarginLeft(190);
-//            payByTable.addCell(new Cell().add(new Paragraph("Pay By 20-SEP-2024\n" +
-//                    "₹706.82").setTextAlignment(TextAlignment.CENTER).setBold().setMarginLeft(30).setMarginRight(30).setFontSize(9)));
-
-//            doc.add(payByTable);
 
             String imagePath1 = "src/main/resources/images/payment1.png"; // Path to your image
             Image img1 = new Image(ImageDataFactory.create(imagePath1));
