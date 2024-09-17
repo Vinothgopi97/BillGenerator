@@ -50,12 +50,13 @@ public class BillGeneratorLatest {
 
     static String jioNumber = "914562359020";
     static String accountNo = "410629241806";
-    static String statementNo = "462505632985";
-    static String billingDate = "12-Aug-2024";
-    static String dueDate = "20-Aug-2024";
+    static String statementNo = "444503240343";
+    static String billingDate = "11-SEP-2024";
+    static String dueDate = "20-SEP-2024";
     static String gstBillNo = "S33I242507865046";
     static String registerdMobile = "+918760603355";
     static String email = "vinothgopi@hotmail.com";
+    static String period = "11-AUG-2024 to 10-SEP-2024";
 
     static String totalAmount = "4718.82";
     static double gstPercentage = 18.0;
@@ -389,7 +390,7 @@ public class BillGeneratorLatest {
     }
 
     public static void main(String[] args) throws WriterException {
-        String dest = "bill.pdf"; // Output file
+        String dest = "Aug2024.pdf"; // Output file
 
         // Create a PdfWriter object
         try (PdfWriter writer = new PdfWriter(dest);
@@ -539,7 +540,7 @@ public class BillGeneratorLatest {
             Table table2 = new Table(2);
             Cell cell11 = new Cell();
             cell11.setBorder(Border.NO_BORDER);
-            Paragraph statementDate = new Paragraph("Your Jio Fiber Bill From 11-AUG-2024 to 10-SEP-2024").setFixedLeading(6);
+            Paragraph statementDate = new Paragraph("Your Jio Fiber Bill From " + period).setFixedLeading(6);
             statementDate.setWidth(250);
             statementDate.setFontSize(9);
             statementDate.setBold();
