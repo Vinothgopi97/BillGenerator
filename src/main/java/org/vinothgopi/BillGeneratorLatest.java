@@ -31,35 +31,39 @@ import com.itextpdf.layout.property.TextAlignment;
 import com.itextpdf.layout.property.UnitValue;
 import com.itextpdf.layout.property.VerticalAlignment;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 
 public class BillGeneratorLatest {
 
-    static String address = "Mr. Vinothgopi G\n" +
-            "4/1351-A, Hussain Colony 626189\n" +
-            "Virudhunagar, Tamilnadu, India\n\n\n\n\n";
+    static Properties prop = new Properties();
 
-    static String placeOfSupply = "Place of Supply: 33 Tamil Nadu\n" +
-            "GST Registration Number: Not Available";
+    static Config config = loadConfig();
 
-    static String jioNumber = "914562359020";
-    static String accountNo = "410629241806";
-    static String statementNo = "444503240343";
-    static String billingDate = "11-SEP-2024";
-    static String dueDate = "20-SEP-2024";
-    static String gstBillNo = "S33I242507865046";
-    static String registerdMobile = "+918760603355";
-    static String email = "vinothgopi@hotmail.com";
-    static String period = "11-AUG-2024 to 10-SEP-2024";
 
-    static String totalAmount = "4718.82";
-    static double gstPercentage = 18.0;
+    static String address = config.getAddress();
+//            "Mr. Vinothgopi G\n" +
+//            "4/1351-A, Hussain Colony 626189\n" +
+//            "Virudhunagar, Tamilnadu, India\n\n\n\n\n";
+
+    static String placeOfSupply = config.getPlaceOfSupply();
+
+    static String jioNumber = config.getJioNumber();
+    static String accountNo = config.getAccountNo();
+    static String statementNo = config.getStatementNo();
+    static String billingDate = config.getBillingDate();
+    static String dueDate = config.getDueDate();
+    static String gstBillNo = config.getGstBillNo();
+    static String registeredMobile = config.getRegisteredMobile();
+    static String email = config.getEmail();
+    static String period = config.getPeriod();
+
+    static String totalAmount = config.getTotalAmount();
+    static double gstPercentage = config.getGstPercentage();
     static double totalAmt = Double.parseDouble(totalAmount);
     static double gstAmt =  (totalAmt * gstPercentage) / ( 100 + gstPercentage);
     static double cgstAmt = gstAmt/2;
@@ -71,6 +75,9 @@ public class BillGeneratorLatest {
     static String stateGst =  String.format("%.2f", sgstAmt);
 
     static String rupeeSymbol = "\u20B9";
+
+    public BillGeneratorLatest() throws FileNotFoundException {
+    }
 
     public static void addOvals(PdfDocument pdf, int x, int y, String[] textAbove, String belowText) throws IOException {
 //        pdf.addNewPage();
@@ -389,8 +396,68 @@ public class BillGeneratorLatest {
         doc.add(img);
     }
 
+
+    public static Config loadConfig() {
+        Properties prop = new Properties();
+        Config config = new Config();
+
+        try (InputStream input = BillGeneratorLatest.class.getClassLoader().getResourceAsStream("input.properties")) {
+            if (input == null) {
+                System.out.println("Sorry, unable to find config.properties");
+                return null;
+            }
+
+            // Load the properties file
+            prop.load(input);
+
+            // Map properties to POJO
+            config.setAddress(prop.getProperty("address"));
+            config.setPlaceOfSupply(prop.getProperty("placeOfSupply"));
+            config.setJioNumber(prop.getProperty("jioNumber"));
+            config.setAccountNo(prop.getProperty("accountNo"));
+            config.setStatementNo(prop.getProperty("statementNo"));
+            config.setBillingDate(prop.getProperty("billingDate"));
+            config.setDueDate(prop.getProperty("dueDate"));
+            config.setGstBillNo(prop.getProperty("gstBillNo"));
+            config.setRegisteredMobile(prop.getProperty("registeredMobile"));
+            config.setEmail(prop.getProperty("email"));
+            config.setPeriod(prop.getProperty("period"));
+            config.setTotalAmount(prop.getProperty("totalAmount"));
+            config.setGstPercentage(Double.parseDouble(prop.getProperty("gstPercentage")));
+            config.setFileName(prop.getProperty("fileName"));
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        return config;
+    }
+
     public static void main(String[] args) throws WriterException {
-        String dest = "Aug2024.pdf"; // Output file
+
+        try (InputStream input =
+                     BillGeneratorLatest.class.getClassLoader().getResourceAsStream("input1.properties")) {
+            prop.load(input);
+            prop.entrySet().stream().forEach(System.out::println);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+
+        address = prop.getProperty("address");
+        placeOfSupply = prop.getProperty("placeOfSupply");
+        jioNumber = prop.getProperty("jioNumber");
+        accountNo = prop.getProperty("accountNo");
+        statementNo = prop.getProperty("statementNo");
+        billingDate = prop.getProperty("billingDate");
+        dueDate = prop.getProperty("dueDate");
+        gstBillNo = prop.getProperty("gstBillNo");
+        registeredMobile = prop.getProperty("registeredMobile");
+        email = prop.getProperty("email");
+        period = prop.getProperty("period");
+        totalAmount = prop.getProperty("totalAmount");
+        gstPercentage = Double.parseDouble(prop.getProperty("gstPercentage"));
+
+        String dest = config.getFileName(); // Output file
 
         // Create a PdfWriter object
         try (PdfWriter writer = new PdfWriter(dest);
@@ -520,7 +587,7 @@ public class BillGeneratorLatest {
 
             doc.add(table);
 
-            Paragraph aadhaar = new Paragraph("Registered Mobile : "+registerdMobile+" | Aadhaar Number : XXXX XXXX1978 | E-Mail: "+email);
+            Paragraph aadhaar = new Paragraph("Registered Mobile : "+ registeredMobile +" | Aadhaar Number : XXXX XXXX1978 | E-Mail: "+email);
             aadhaar.setFontSize(8);
             aadhaar.setFixedLeading(5);
             doc.add(aadhaar);
