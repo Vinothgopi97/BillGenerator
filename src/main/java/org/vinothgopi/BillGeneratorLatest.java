@@ -33,6 +33,7 @@ import com.itextpdf.layout.property.VerticalAlignment;
 
 import java.io.*;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -363,10 +364,23 @@ public class BillGeneratorLatest {
         return font;
     }
 
-    private static void addJioDigitalLifeImage(Document doc, PdfDocument pdfDoc) throws MalformedURLException {
-        String imagePath = "src/main/resources/images/topimg.png"; // Path to your image
-        Image img = new Image(ImageDataFactory.create(imagePath));
+    private static void addJioDigitalLifeImage(Document doc, PdfDocument pdfDoc) throws IOException {
+        String imagePath = "/images/topimg.png"; // Path to your image
+//        InputStream imgStream = BillGeneratorLatest.class.getClassLoader()
+//                .getResourceAsStream("images/topimg.png");
+//        assert imgStream != null;
 
+//        URL imgUrl = null;
+//        try {
+//            imgUrl = BillGeneratorLatest.class.getResourceAsStream(imagePath);
+//            System.out.println("IMAGE URL " + imgUrl.getPath());
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+        InputStream imgStream = BillGeneratorLatest.class.getResourceAsStream(imagePath);
+//        System.out.println("IMAGE URL " + imgUrl);
+        Image img = new Image(ImageDataFactory.create(imgStream.readAllBytes()));
+        imgStream.close();
         // Set image size and position
 //            img.setFixedPosition(1, 0, 200); // x, y, width
 
@@ -403,7 +417,7 @@ public class BillGeneratorLatest {
 
         try (InputStream input = BillGeneratorLatest.class.getClassLoader().getResourceAsStream("input.properties")) {
             if (input == null) {
-                System.out.println("Sorry, unable to find config.properties");
+                System.out.println("Sorry, unable to find input.properties");
                 return null;
             }
 
@@ -435,13 +449,26 @@ public class BillGeneratorLatest {
 
     public static void main(String[] args) throws WriterException {
 
-        try (InputStream input =
-                     BillGeneratorLatest.class.getClassLoader().getResourceAsStream("input1.properties")) {
-            prop.load(input);
-            prop.entrySet().stream().forEach(System.out::println);
-        } catch(Exception e) {
-            e.printStackTrace();
+        if (args.length == 0) {
+            System.out.println("properties file is not provided");
+            try (InputStream input =
+                         BillGeneratorLatest.class.getClassLoader().getResourceAsStream("input.properties")) {
+                prop.load(input);
+                prop.entrySet().stream().forEach(System.out::println);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+            File properties = new File(args[0]);
+            try (InputStream input = new FileInputStream(properties)) {
+                prop.load(input);
+                prop.entrySet().stream().forEach(System.out::println);
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
         }
+
+
 
         address = prop.getProperty("address");
         placeOfSupply = prop.getProperty("placeOfSupply");
@@ -466,7 +493,7 @@ public class BillGeneratorLatest {
             // Load a font that supports the "+rupeeSymbol+" symbol
 
 //            String fontPath = "src/main/resources/fonts/NotoSans-Regular.ttf"; // Replace with your font path
-            String fontPath = "src/main/resources/fonts/DejaVuSans.ttf"; // Replace with your font path
+//            String fontPath = "src/main/resources/fonts/DejaVuSans.ttf"; // Replace with your font path
 //            PdfFont font = PdfFontFactory.createFont(fontPath, PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
 //            PdfFont font = PdfFontFactory.createFont(fontPath, PdfEncodings.IDENTITY_H, true);
             PdfFont font = getFont();
@@ -500,6 +527,7 @@ public class BillGeneratorLatest {
                     " GST Bill Number       : "+gstBillNo+"\n" +
                     " Document Number       : "+statementNo+"\n" +
                     " Billing cycle Date    : "+billingDate+"\n" +
+                    " Tax invoice Date    : " +billingDate+"\n" +
                     " Due Date              : "+dueDate+"\n" +
                     " Credit Limit          : "+rupeeSymbol+"0\n" +
                     " Security Deposit      : "+rupeeSymbol+"0\n" ;
@@ -526,6 +554,14 @@ public class BillGeneratorLatest {
             detailsTable.addCell(new Cell().add(new Paragraph("Billing cycle Date").setFixedLeading(5)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
             detailsTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(5)).setBorder(Border.NO_BORDER));
             detailsTable.addCell(new Cell().add(new Paragraph(billingDate).setFixedLeading(5)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
+
+            detailsTable.addCell(new Cell().add(new Paragraph("Tax invoice Date").setFixedLeading(5)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+            detailsTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(5)).setBorder(Border.NO_BORDER));
+            detailsTable.addCell(new Cell().add(new Paragraph(billingDate).setFixedLeading(5)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
+
+            detailsTable.addCell(new Cell().add(new Paragraph("Due Date").setFixedLeading(5)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
+            detailsTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(5)).setBorder(Border.NO_BORDER));
+            detailsTable.addCell(new Cell().add(new Paragraph(dueDate).setFixedLeading(5)).setTextAlignment(TextAlignment.RIGHT).setBorder(Border.NO_BORDER));
 
             detailsTable.addCell(new Cell().add(new Paragraph("Credit Limit").setFixedLeading(5)).setTextAlignment(TextAlignment.LEFT).setBorder(Border.NO_BORDER));
             detailsTable.addCell(new Cell().add(new Paragraph(":").setFixedLeading(5)).setBorder(Border.NO_BORDER));
@@ -571,8 +607,10 @@ public class BillGeneratorLatest {
 //                            .setMarginLeft(45)
 //                            .setTextAlignment(TextAlignment.CENTER));
             paymentQrCell.add(qrCodeImage.setHorizontalAlignment(HorizontalAlignment.CENTER));
-            String upiImg = "src/main/resources/images/upi.png"; // Path to your image
-            Image upiImage = new Image(ImageDataFactory.create(upiImg));
+            String upiImg = "/images/upi.png"; // Path to your image
+            InputStream imgStream = BillGeneratorLatest.class.getResourceAsStream(upiImg);
+            Image upiImage = new Image(ImageDataFactory.create(imgStream.readAllBytes()));
+            imgStream.close();
             upiImage.scaleToFit(60,50);
             upiImage.setMarginLeft(70);
             paymentQrCell.add(upiImage);
@@ -635,9 +673,10 @@ public class BillGeneratorLatest {
 
             addBillTable(doc, pdfDoc);
 
-            String imagePath1 = "src/main/resources/images/payment1.png"; // Path to your image
-            Image img1 = new Image(ImageDataFactory.create(imagePath1));
-
+            String imagePath1 = "/images/payment1.png"; // Path to your image
+            InputStream imgStream1 = BillGeneratorLatest.class.getResourceAsStream(imagePath1);
+            Image img1 = new Image(ImageDataFactory.create(imgStream1.readAllBytes()));
+            imgStream1.close();
             // Get the page size
             PageSize pageSize1 = pdfDoc.getDefaultPageSize();
             float pageWidth1 = pageSize1.getWidth();
@@ -676,7 +715,7 @@ public class BillGeneratorLatest {
 //            paymentQrCell.add(qrImg.setHorizontalAlignment(HorizontalAlignment.CENTER));
 
             doc.add(qrImg);
-
+            System.out.println("Bill is generated");
         } catch (IOException e) {
             e.printStackTrace();
         }

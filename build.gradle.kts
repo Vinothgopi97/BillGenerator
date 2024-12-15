@@ -1,5 +1,24 @@
 plugins {
     id("java")
+    application
+//    kotlin("jvm") version "1.8.0"
+}
+
+application {
+    mainClass.set("org.vinothgopi.BillGeneratorLatest")
+}
+
+tasks.jar {
+    manifest {
+        attributes["Main-Class"] = "org.vinothgopi.BillGeneratorLatest"
+    }
+    from(sourceSets.main.get().output)
+    dependsOn(configurations.runtimeClasspath)
+    from({
+        configurations.runtimeClasspath.get().filter { it.name.endsWith("jar") }.map { zipTree(it) }
+    })
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    exclude("META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA")
 }
 
 group = "org.vinothgopi"
