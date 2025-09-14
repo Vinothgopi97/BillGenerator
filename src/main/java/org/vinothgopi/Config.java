@@ -15,8 +15,13 @@ public class Config {
     private String totalAmount;
     private double gstPercentage;
     private String fileName;
+    private String aadhaar;
 
     // Getters and Setters
+
+    public String getAadhaar() { return aadhaar; }
+    public void setAadhaar(String aadhaar) { this.aadhaar = aadhaar; }
+
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 

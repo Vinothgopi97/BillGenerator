@@ -47,6 +47,7 @@ public class BillGeneratorLatest {
 
 
     static String address = config.getAddress();
+    static String aadhar = config.getAadhaar();
 //            "Mr. Vinothgopi G\n" +
 //            "4/1351-A, Hussain Colony 626189\n" +
 //            "Virudhunagar, Tamilnadu, India\n\n\n\n\n";
@@ -439,6 +440,7 @@ public class BillGeneratorLatest {
             config.setTotalAmount(prop.getProperty("totalAmount"));
             config.setGstPercentage(Double.parseDouble(prop.getProperty("gstPercentage")));
             config.setFileName(prop.getProperty("fileName"));
+            config.setAadhaar(prop.getProperty("aadhaar"));
 
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -482,6 +484,7 @@ public class BillGeneratorLatest {
         email = prop.getProperty("email");
         period = prop.getProperty("period");
         totalAmount = prop.getProperty("totalAmount");
+        aadhar = prop.getProperty("aadhaar");
         gstPercentage = Double.parseDouble(prop.getProperty("gstPercentage"));
 
         String dest = config.getFileName(); // Output file
@@ -625,7 +628,7 @@ public class BillGeneratorLatest {
 
             doc.add(table);
 
-            Paragraph aadhaar = new Paragraph("Registered Mobile : "+ registeredMobile +" | Aadhaar Number : XXXX XXXX1978 | E-Mail: "+email);
+            Paragraph aadhaar = new Paragraph("Registered Mobile : "+ registeredMobile +" | Aadhaar Number : XXXX XXXX" + aadhar + "| E-Mail: "+email);
             aadhaar.setFontSize(8);
             aadhaar.setFixedLeading(5);
             doc.add(aadhaar);
